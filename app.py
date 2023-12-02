@@ -1,9 +1,12 @@
+import logging
+import os
+
 import streamlit as st
 import pandas as pd
+
 from scrapers import ICCVScraper
 from fetchers import ArxivFetcher
-from store import EmbeddingStorage 
-import os
+from store import EmbeddingStorage
 
 # Initialize the EmbeddingStorage
 embedding_storage = EmbeddingStorage(
@@ -12,8 +15,11 @@ embedding_storage = EmbeddingStorage(
     os.environ.get("OPENAI_API_KEY")
 )
 
-# Set page config
-st.set_page_config(page_title="ML Conference Paper Scraper", layout="wide")
+logger = logging.getLogger('accepted_papers')
+
+# set page config
+st.set_page_config(page_title="Accepted conference papers", layout="wide")
+
 
 # Sidebar for user inputs - Semantic Search
 st.sidebar.title("ML Conference Paper Scraper")
@@ -23,18 +29,19 @@ st.sidebar.markdown("* Use the search field to find papers semantically.")
 conference_url = st.sidebar.text_input("Conference URL")
 search_query = st.sidebar.text_input("Semantic Search Papers")
 
+
 # Main area
 st.markdown("""
-## ML Conference Paper Scraper
+## Accepted conference papers
 
 This tool allows you to scrape abstracts from major ML conference websites.
 Enter the URL of the conference in the sidebar and click 'Scrape Papers' to begin.
 """)
 
-# Function to scrape papers
+
 def scrape_and_display(url):
     fetcher = ArxivFetcher()  # Initialize your ArxivFetcher
-    scraper = ICCVScraper(fetcher, num_papers_to_scrape=5) 
+    scraper = ICCVScraper(fetcher, num_papers_to_scrape=5)
 
     try:
         papers = scraper.get_publications(url)
@@ -60,7 +67,7 @@ if st.sidebar.button("Scrape Papers"):
 if search_query:
     with st.spinner("Searching for papers..."):
         search_results = embedding_storage.semantic_search(search_query)
-        
+
         # Debug line: print the raw search results
         st.write("Raw Search Results:", search_results)
 
