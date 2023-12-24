@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -18,36 +19,45 @@ def get_abstract_from_arxiv(arxiv_id):
     
     return abstract  # Only returning the abstract
 
-def scrape_papers(url):
+def scrape_papers(url, existing_papers):
     response = requests.get(url)
     response.raise_for_status()
 
     soup = BeautifulSoup(response.content, 'html.parser')
     papers = []
     
-    # Gather all anchors with arXiv links
     arxiv_anchors = [anchor for anchor in soup.find_all('a') if 'arXiv' in anchor.text]
     
     for anchor in arxiv_anchors:
         title = anchor.find_previous('dt').text.strip()
         link = anchor['href']
-        
-        # Extract the arXiv ID from the URL
         arxiv_id = link.split('/')[-1]
-        
-        # Get the abstract using the arXiv API
-        abstract = get_abstract_from_arxiv(arxiv_id)
-        papers.append({'title': title, 'url': link, 'abstract': abstract})
+
+        # Check if paper already exists
+        if not existing_papers.get(arxiv_id):
+            abstract = get_abstract_from_arxiv(arxiv_id)
+            papers.append({'title': title, 'url': link, 'abstract': abstract, 'arxiv_id': arxiv_id})
 
     return papers
 
+def read_existing_papers(file_path):
+    if os.path.exists(file_path):
+        return pd.read_csv(file_path).set_index('arxiv_id').to_dict('index')
+    return {}
+
+# Main code
+file_path = 'papers_with_abstracts.csv'
+existing_papers = read_existing_papers(file_path)
+
 url = "https://openaccess.thecvf.com/ICCV2023?day=all"
-papers = scrape_papers(url)
+new_papers = scrape_papers(url, existing_papers)
 
-df = pd.DataFrame(papers)
-df.to_csv('papers_with_abstracts.csv', index=False)  # File name changed to reflect content
-
-print(f"Scraped {len(papers)} papers with abstracts and saved to 'papers_with_abstracts.csv'")
+if new_papers:
+    df = pd.DataFrame(new_papers)
+    df.to_csv(file_path, mode='a', header=not os.path.exists(file_path), index=False)
+    print(f"Added {len(new_papers)} new papers to '{file_path}'")
+else:
+    print("No new papers found.")
 
 
 
