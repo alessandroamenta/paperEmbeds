@@ -1,9 +1,9 @@
 import abc
 from typing import List, Dict
 
-class StorageBackend(abc.ABC):
+class BaseDAL(abc.ABC):
     """
-    Abstract base class for storage backends.
+    Abstract base class for data access layers.
     """
 
     @abc.abstractmethod
@@ -27,9 +27,9 @@ class StorageBackend(abc.ABC):
         """
         pass
 
-class MongoDBStorage(StorageBackend):
+class MongoDBDAL(BaseDAL):
     """
-    MongoDB storage implementation.
+    MongoDB data access layer implementation.
     """
 
     def __init__(self, db_uri, db_name):
@@ -49,9 +49,9 @@ class MongoDBStorage(StorageBackend):
         # Implement search logic using MongoDB
         pass
 
-class WeaviateStorage(StorageBackend):
+class WeaviateDAL(BaseDAL):
     """
-    Weaviate storage implementation for embeddings.
+    Weaviate data access layer implementation for embeddings.
     """
 
     def __init__(self, weaviate_url, weaviate_api_key):
@@ -67,5 +67,5 @@ class WeaviateStorage(StorageBackend):
         pass
 
 # Example usage
-# mongo_storage = MongoDBStorage(<db_uri>, <db_name>)
-# weaviate_storage = WeaviateStorage(<weaviate_url>, <weaviate_api_key>)
+# mongo_dal = MongoDBDAL(<db_uri>, <db_name>)
+# weaviate_dal = WeaviateDAL(<weaviate_url>, <weaviate_api_key>)

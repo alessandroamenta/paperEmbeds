@@ -1,9 +1,12 @@
+import os
+
 import streamlit as st
 import pandas as pd
-import os
 
 from scrapers import ICCVScraper
 from fetchers import ArxivFetcher
+
+PAPER_CSV = 'papers_with_abstracts.csv'
 
 # Set page config
 st.set_page_config(page_title="Accepted conference papers", layout="wide")
@@ -26,16 +29,16 @@ def read_existing_papers(file_path):
         return pd.read_csv(file_path)
     return pd.DataFrame()
 
-def scrape_and_display(url):
+def scrape_and_save(url):
     fetcher = ArxivFetcher()
     scraper = ICCVScraper(fetcher, num_papers_to_scrape=5)
 
     try:
-        existing_papers = read_existing_papers('papers_with_abstracts.csv')
+        existing_papers = read_existing_papers(PAPER_CSV)
         new_papers = scraper.get_publications(url, existing_papers)
         if new_papers:
             df = pd.DataFrame(new_papers)
-            df.to_csv('papers_with_abstracts.csv', mode='a', header=not os.path.exists('papers_with_abstracts.csv'), index=False)
+            df.to_csv(PAPER_CSV, mode='a', header=not os.path.exists(PAPER_CSV), index=False)
             return df
         else:
             st.info('No new papers to add.')
@@ -47,13 +50,13 @@ def scrape_and_display(url):
 if st.sidebar.button("Scrape Papers"):
     if conference_url:
         with st.spinner('Scraping papers...'):
-            df = scrape_and_display(conference_url)
+            df = scrape_and_save(conference_url)
             st.success('Scraping complete!')
             if not df.empty:
                 st.write(df)
 
 # Load and display existing papers
-existing_papers = read_existing_papers('papers_with_abstracts.csv')
+existing_papers = read_existing_papers(PAPER_CSV)
 if not existing_papers.empty:
     st.markdown("### Existing Papers")
     st.write(existing_papers)

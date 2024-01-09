@@ -1,7 +1,9 @@
 import os
 import requests
+
 from bs4 import BeautifulSoup
 import pandas as pd
+
 # import PyPDF2  # Not needed if only fetching abstracts
 # from io import BytesIO  # Not needed if only fetching abstracts
 
@@ -19,7 +21,10 @@ def get_abstract_from_arxiv(arxiv_id):
     
     return abstract  # Only returning the abstract
 
-def scrape_papers(url, existing_papers):
+def scrape_arxiv_papers(url, existing_papers=None):
+    if existing_papers is None:
+        existing_papers = {}
+
     response = requests.get(url)
     response.raise_for_status()
 
@@ -34,7 +39,7 @@ def scrape_papers(url, existing_papers):
         arxiv_id = link.split('/')[-1]
 
         # Check if paper already exists
-        if not existing_papers.get(arxiv_id):
+        if arxiv_id not in existing_papers:
             abstract = get_abstract_from_arxiv(arxiv_id)
             papers.append({'title': title, 'url': link, 'abstract': abstract, 'arxiv_id': arxiv_id})
 
@@ -50,7 +55,7 @@ file_path = 'papers_with_abstracts.csv'
 existing_papers = read_existing_papers(file_path)
 
 url = "https://openaccess.thecvf.com/ICCV2023?day=all"
-new_papers = scrape_papers(url, existing_papers)
+new_papers = scrape_arxiv_papers(url, existing_papers)
 
 if new_papers:
     df = pd.DataFrame(new_papers)
@@ -59,7 +64,22 @@ if new_papers:
 else:
     print("No new papers found.")
 
+def main():
+    file_path = 'papers_with_abstracts.csv'
+    existing_papers = read_existing_papers(file_path)
 
+    url = "https://openaccess.thecvf.com/ICCV2023?day=all"
+    new_papers = scrape_arxiv_papers(url, existing_papers)
+
+    if new_papers:
+        df = pd.DataFrame(new_papers)
+        df.to_csv(file_path, mode='a', header=not os.path.exists(file_path), index=False)
+        print(f"Added {len(new_papers)} new papers to '{file_path}'")
+    else:
+        print("No new papers found.")
+
+if __name__ == '__main__':
+    main()
 
 #all in one script
 #scraping and fetching are intertwined -> changing how we fetch from arxiv would also mean changing how we scrape iccv
