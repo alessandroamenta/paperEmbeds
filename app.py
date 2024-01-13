@@ -5,8 +5,10 @@ import pandas as pd
 
 from scrapers import ICCVScraper
 from fetchers import ArxivFetcher
+from storage import LocalFileStorage
 
 PAPER_CSV = 'papers_with_abstracts.csv'
+file_storage = LocalFileStorage(PAPER_CSV) 
 
 # Set page config
 st.set_page_config(page_title="Accepted conference papers", layout="wide")
@@ -34,11 +36,11 @@ def scrape_and_save(url):
     scraper = ICCVScraper(fetcher, num_papers_to_scrape=5)
 
     try:
-        existing_papers = read_existing_papers(PAPER_CSV)
+        existing_papers = file_storage.read_papers()  # Use LocalFileStorage to read papers
         new_papers = scraper.get_publications(url, existing_papers)
         if new_papers:
             df = pd.DataFrame(new_papers)
-            df.to_csv(PAPER_CSV, mode='a', header=not os.path.exists(PAPER_CSV), index=False)
+            file_storage.save_papers(new_papers)  # Use LocalFileStorage to save papers
             return df
         else:
             st.info('No new papers to add.')

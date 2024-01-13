@@ -1,6 +1,33 @@
+import os
 import abc
 from typing import List, Dict
 
+import pandas as pd
+
+class LocalFileStorage:
+    """
+    Local file system storage backend.
+    """
+
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def read_papers(self):
+        """
+        Read existing papers from the CSV file.
+        """
+        if os.path.exists(self.file_path):
+            return pd.read_csv(self.file_path)
+        return pd.DataFrame()
+
+    def save_papers(self, papers):
+        """
+        Save a list of paper details to the CSV file.
+        """
+        if not papers.empty:
+            papers.to_csv(self.file_path, mode='a', header=not os.path.exists(self.file_path), index=False)
+
+        
 class BaseDAL(abc.ABC):
     """
     Abstract base class for data access layers.
