@@ -7,15 +7,10 @@ import requests
 class Scraper:
     def get_publications(self, url):
         raise NotImplementedError("Subclasses must implement this method!")
-#an attribute is a variable that belongs to an object/instance of the class -> num_papers_to_scrape is an attribute that stores data
-#bundle together related methods and variables/data they need to work on -> encapsulation
 
 #separations of concerns: ICCVScraper is only responsible for scraping papers from ICCV
 class ICCVScraper(Scraper):
-    #initialize the object with fetcher and provided num of papers to scrape
     def __init__(self, fetcher, num_papers_to_scrape=None):
-        #attribute with an instance of the fetcher object - it has data about which fetcher to use
-        #dependency injection: when we create an instance of ICCVScraper, we pass it the fetcher it should use -> maybe we can make this dynamic?
         self.fetcher = fetcher
         self.num_papers_to_scrape = num_papers_to_scrape
 

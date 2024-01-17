@@ -3,6 +3,8 @@ import abc
 from typing import List, Dict
 
 import pandas as pd
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 class LocalFileStorage:
     """
@@ -54,26 +56,38 @@ class BaseDAL(abc.ABC):
         """
         pass
 
-class MongoDBDAL(BaseDAL):
+class FirebaseDAL(BaseDAL):
     """
-    MongoDB data access layer implementation.
+    Firebase data access layer implementation.
     """
 
-    def __init__(self, db_uri, db_name):
-        # Initialize MongoDB connection here
-        pass
+    def __init__(self):
+        # Check if Firebase has already been initialized
+        if not firebase_admin._apps:
+            cred_path = os.path.join(os.path.dirname(__file__), 'firebasecreds.json')
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+
+        self.db = firestore.client()
 
     def store_papers(self, papers: List[Dict]):
-        # Implement logic to store paper details in MongoDB
-        pass
+        papers_collection = self.db.collection('papers')
+        for paper in papers:
+            papers_collection.document(paper['arxiv_id']).set(paper)
 
-    def store_embeddings(self, embeddings: List):
-        # MongoDB might not be ideal for storing embeddings,
-        # but this is just a placeholder for the method.
-        pass
+    def get_papers(self):
+        papers_collection = self.db.collection('papers')
+        documents = papers_collection.stream()
+        return [doc.to_dict() for doc in documents]
 
     def search_papers(self, query: str):
-        # Implement search logic using MongoDB
+        # Basic search implementation (more complex queries can be added later)
+        papers_collection = self.db.collection('papers')
+        query_results = papers_collection.where('title', '==', query).stream()
+        return [doc.to_dict() for doc in query_results]
+    
+    def store_embeddings(self, embeddings: List):
+    # Dummy implementation for store_embeddings
         pass
 
 class WeaviateDAL(BaseDAL):
@@ -93,6 +107,25 @@ class WeaviateDAL(BaseDAL):
         # Implement search logic using Weaviate
         pass
 
-# Example usage
-# mongo_dal = MongoDBDAL(<db_uri>, <db_name>)
-# weaviate_dal = WeaviateDAL(<weaviate_url>, <weaviate_api_key>)
+
+
+if __name__ == "__main__":
+    # Test Store Papers
+    test_papers = [
+        {'arxiv_id': '1234', 'title': 'Sample Paper 1', 'abstract': 'Abstract 1'},
+        {'arxiv_id': '5678', 'title': 'Sample Paper 2', 'abstract': 'Abstract 2'}
+    ]
+    dal = FirebaseDAL()
+    dal.store_papers(test_papers)
+
+    # Test Get Papers
+    papers = dal.get_papers()
+    print("Papers in Firestore:")
+    for paper in papers:
+        print(paper)
+
+    # Test Search Papers
+    search_results = dal.search_papers('Sample Paper 1')
+    print("Search Results for 'Sample Paper 1':")
+    for result in search_results:
+        print(result)

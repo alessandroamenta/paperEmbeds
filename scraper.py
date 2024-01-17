@@ -80,12 +80,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#all in one script
-#scraping and fetching are intertwined -> changing how we fetch from arxiv would also mean changing how we scrape iccv
-#not that flexible -> to adapt to another conference or fetch from a different source like google scholar we'd need to change the whole thing
-
-#new version with OOP
-#divided in classes, each focused on a task -> fetching, scraping
-#the scraper is independent of the fetcher
-#can easely add new fetchers or scrapers without messing up existing code
