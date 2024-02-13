@@ -20,7 +20,7 @@ def filter_publications(publications, query):
     return [pub for pub in publications if query in pub['title'].lower() or any(query in author.lower() for author in pub['authors'])]
 
 # Path to the JSON file containing the publications
-PUBLICATIONS_FILE = 'papers_output.json'
+PUBLICATIONS_FILE = 'papers_repository.json'
 
 # Load existing papers
 existing_papers = read_parsed_publications(PUBLICATIONS_FILE)

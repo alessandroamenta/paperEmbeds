@@ -5,16 +5,15 @@ TODO: Add fetchers for google scholar, dblp, semantic scholar, etc.
 TODO: create a publication class that holds the content and metadata.
 '''
 from abc import ABCMeta, abstractmethod
-from io import BytesIO
 import logging
-
 import requests
 from bs4 import BeautifulSoup
 import PyPDF2
 import time
 
-logger = logging.getLogger('accepted_papers')
-
+# Configure the logger for this module
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class PublicationFetcher(metaclass=ABCMeta):
     '''Abstract base class for publication fetchers.'''
@@ -23,10 +22,9 @@ class PublicationFetcher(metaclass=ABCMeta):
         '''Fetches the publication content from the source and returns it.'''
         raise NotImplementedError("Subclasses must implement this method!")
 
-
 class ArxivFetcher(PublicationFetcher):
     def fetch(self, arxiv_id):
-        logger.debug(f"Fetching publication {arxiv_id} from arxiv.org")
+        logger.debug(f"Attempting to fetch publication {arxiv_id} from arXiv")
         api_url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
@@ -34,19 +32,20 @@ class ArxivFetcher(PublicationFetcher):
         
         # Implementing retries with exponential backoff
         max_retries = 5
-        retry_delay = 1  # start with 1 second delay
+        retry_delay = 1  # Start with 1 second delay
         for attempt in range(max_retries):
             try:
                 response = requests.get(api_url, headers=headers)
                 response.raise_for_status()  # Check for HTTP request errors
+                logger.debug("Successfully fetched the data on attempt #%d", attempt + 1)
                 break  # Success, exit retry loop
             except requests.exceptions.RequestException as e:
-                logger.warning(f"Request failed: {e}, retrying in {retry_delay} seconds...")
+                logger.warning("Attempt #%d failed with error: %s. Retrying in %d seconds...", attempt + 1, e, retry_delay)
                 time.sleep(retry_delay)
                 retry_delay *= 2  # Exponential backoff
         else:
             # Failed all retries
-            logger.error(f"Failed to fetch publication after {max_retries} attempts")
+            logger.error("Failed to fetch publication %s after %d attempts.", arxiv_id, max_retries)
             return None, None
 
         soup = BeautifulSoup(response.content, 'xml')
@@ -54,7 +53,7 @@ class ArxivFetcher(PublicationFetcher):
         abstract = entry.find('summary').text.strip()
         authors = [author.find('name').text for author in entry.find_all('author')]
 
-        logger.info(f"Fetched publication {arxiv_id} from arxiv.org")
+        logger.info("Successfully fetched publication %s from arXiv", arxiv_id)
         return abstract, authors
 
 

@@ -10,10 +10,10 @@ def scrape_and_save(url, num_papers, output_format):
     papers = scraper.get_publications(url)
 
     if output_format.lower() == 'json':
-        with open('papers_output.json', 'w') as f:
+        with open('papers_repository.json', 'w') as f:
             json.dump(papers, f, indent=4)
     elif output_format.lower() == 'jsonl':
-        with open('papers_output.jsonl', 'w') as f:
+        with open('papers_repository.jsonl', 'w') as f:
             for paper in papers:
                 f.write(json.dumps(paper) + '\n')
 
