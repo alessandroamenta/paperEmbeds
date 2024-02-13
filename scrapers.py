@@ -31,10 +31,9 @@ class ICCVScraper(Scraper):
         for anchor in arxiv_anchors:
             title = anchor.find_previous('dt').text.strip()
             link = anchor['href']
-
             arxiv_id = link.split('/')[-1]
 
-            abstract, content = self.fetcher.fetch(arxiv_id)
-            papers.append({'title': title, 'url': link, 'abstract': abstract, 'content': content})
+            abstract, authors = self.fetcher.fetch(arxiv_id)
+            papers.append({'title': title, 'url': link, 'abstract': abstract, 'authors': authors})
 
         return papers

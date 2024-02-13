@@ -1,69 +1,48 @@
-import os
-
 import streamlit as st
 import pandas as pd
-
-from scrapers import ICCVScraper
-from fetchers import ArxivFetcher
-from storage import LocalFileStorage
-
-PAPER_CSV = 'papers_with_abstracts.csv'
-file_storage = LocalFileStorage(PAPER_CSV) 
+import json
 
 # Set page config
 st.set_page_config(page_title="Accepted conference papers", layout="wide")
 
-# Sidebar for user inputs
-st.sidebar.title("ML Conference Paper Scraper")
-st.sidebar.markdown("### Instructions")
-st.sidebar.markdown("* Enter the URL of the conference for scraping.")
-conference_url = st.sidebar.text_input("Conference URL")
-
-# Main area
-st.markdown("""
-## Accepted conference papers
-This tool allows you to scrape abstracts from major ML conference websites.
-Enter the URL of the conference in the sidebar and click 'Scrape Papers' to begin.
-""")
-
-def read_existing_papers(file_path):
-    if os.path.exists(file_path):
-        return pd.read_csv(file_path)
-    return pd.DataFrame()
-
-def scrape_and_save(url):
-    fetcher = ArxivFetcher()
-    scraper = ICCVScraper(fetcher, num_papers_to_scrape=5)
-
+# Read the JSON file containing the parsed publications
+@st.cache_data
+def read_parsed_publications(filepath):
     try:
-        existing_papers = file_storage.read_papers()  # Use LocalFileStorage to read papers
-        new_papers = scraper.get_publications(url, existing_papers)
-        if new_papers:
-            df = pd.DataFrame(new_papers)
-            file_storage.save_papers(new_papers)  # Use LocalFileStorage to save papers
-            return df
-        else:
-            st.info('No new papers to add.')
-            return pd.DataFrame()
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-        return pd.DataFrame()
+        with open(filepath, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
 
-if st.sidebar.button("Scrape Papers"):
-    if conference_url:
-        with st.spinner('Scraping papers...'):
-            df = scrape_and_save(conference_url)
-            st.success('Scraping complete!')
-            if not df.empty:
-                st.write(df)
+# Function to filter publications by search query
+def filter_publications(publications, query):
+    query = query.lower()
+    return [pub for pub in publications if query in pub['title'].lower() or any(query in author.lower() for author in pub['authors'])]
 
-# Load and display existing papers
-existing_papers = read_existing_papers(PAPER_CSV)
-if not existing_papers.empty:
-    st.markdown("### Existing Papers")
-    st.write(existing_papers)
+# Path to the JSON file containing the publications
+PUBLICATIONS_FILE = 'papers_output.json'
+
+# Load existing papers
+existing_papers = read_parsed_publications(PUBLICATIONS_FILE)
+
+# Display only the first 10 papers if no search query is made
+initial_display_papers = existing_papers[:10]
+
+# User input for search
+search_query = st.text_input("Search for papers (by title or author):")
+
+if search_query:
+    # Filter publications based on the search query
+    filtered_papers = filter_publications(existing_papers, search_query)
+    if filtered_papers:
+        st.markdown("### Search Results")
+        st.write(pd.DataFrame(filtered_papers))
+    else:
+        st.markdown("No matching papers found.")
 else:
-    st.markdown("No papers found. Please scrape to populate.")
+    # If no search query, display the first 10 papers
+    st.markdown("### Existing Papers (showing first 10)")
+    st.write(pd.DataFrame(initial_display_papers))
 
 # Additional notes or footer
 st.markdown("---")
