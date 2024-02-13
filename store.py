@@ -1,87 +1,52 @@
 import logging
 import os
-
-import weaviate
+import pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 
-logger = logging.getLogger('papers')
-
+# Load environment variables
 load_dotenv()
 
+# Logging configuration
+logger = logging.getLogger('papers')
+logging.basicConfig(level=logging.INFO)
 
 class EmbeddingStorage:
-    def __init__(self, weaviate_url, weaviate_api_key, openai_api_key):
-        self.client = weaviate.Client(url=weaviate_url, auth_client_secret=weaviate.AuthApiKey(weaviate_api_key))
+    def __init__(self, pinecone_api_key, openai_api_key, pinecone_index_name):
+        # Configure Pinecone
+        pinecone.configure(api_key=pinecone_api_key)
+        # Check if the index exists, create if not
+        self.index_name = pinecone_index_name
+        if self.index_name not in pinecone.list_indexes():
+            # Set dimension to 768 for OpenAI embeddings (adjust if needed)
+            pinecone.create_index(name=self.index_name, dimension=768, metric="cosine")
+        # Connect to the index
+        self.index = pinecone.Index(name=self.index_name)
+
+        # Initialize OpenAI embeddings
         self.embeddings = OpenAIEmbeddings(api_key=openai_api_key)
-        self._create_schema()
 
-    def _create_schema(self):
-        schema = self.client.schema.get()
+    def generate_embeddings(self, texts):
+        # Generate embeddings for the given texts
+        return self.embeddings.embed_documents(texts)
 
-        # Check if the schema is empty or uninitialized
-        if 'classes' not in schema:
-            schema['classes'] = []
+    def store_embeddings(self, papers):
+        # Store the embeddings in Pinecone
+        for paper in papers:
+            paper_embedding = self.generate_embeddings([paper['abstract']])[0]
+            # Upsert the vector and metadata into Pinecone
+            self.index.upsert(vectors=[(paper['title'], paper_embedding.tolist(), paper)])
 
-        existing_class_names = [cls['class'] for cls in schema['classes']]
+    def semantic_search(self, query_text, top_k=1):
+        # Perform a semantic search in Pinecone
+        query_embedding = self.generate_embeddings([query_text])[0]
+        return self.index.query(queries=[query_embedding], top_k=top_k)
 
-        paper_schema = {
-            "class": "Paper",
-            "description": "A class to store information about ML conference papers",
-            "properties": [
-                {"name": "title", "dataType": ["string"], "indexInverted": True},
-                {"name": "url", "dataType": ["string"]},
-                {"name": "abstract", "dataType": ["text"], "indexInverted": True},
-                {"name": "embedding", "dataType": ["number[]"]}  # Vector of numbers
-            ]
-        }
-
-        # Check if 'Paper' class already exists
-        if 'Paper' not in existing_class_names:
-            self.client.schema.create_class(paper_schema)
-
-    def generate_embeddings(self, abstracts):
-        # Embedding a list of abstracts (documents)
-        return self.embeddings.embed_documents(abstracts)
-
-    def store_papers(self, papers, embeddings):
-        for paper, embedding in zip(papers, embeddings):
-            paper_object = {
-                "title": paper['title'],
-                "url": paper['url'],
-                "abstract": paper['abstract'],
-                "embedding": embedding
-            }
-            self.client.data_object.create(paper_object, class_name="Paper")
-
-    def clear_database(self):
-        schema = self.client.schema.get()
-        classes = schema['classes']
-        for class_info in classes:
-            class_name = class_info['class']
-            self.client.schema.delete_class(class_name)
-
-    def semantic_search(self, query_text, limit=1):
-        # Convert the query text into an embedding
-        query_embedding = self.embeddings.embed_query(query_text)
-
-        # Perform a semantic search in Weaviate using nearVector
-        results = self.client.query.get(
-            "Paper",
-            ["title", "url", "abstract"]
-        ).with_near_vector({
-            "vector": query_embedding,
-            "certainty": 0.7  # You can adjust the certainty as needed
-        }).with_limit(limit).do()
-
-        return results
-
-# Example Usage
-load_dotenv()
+# Example usage
 embedding_storage = EmbeddingStorage(
-    os.environ.get("WEAVIATE_CLUSTER_URL"),
-    os.environ.get("WEAVIATE_API_KEY"),
-    os.environ.get("OPENAI_API_KEY")
+    pinecone_api_key=os.getenv("PINECONE_API_KEY"),
+    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    pinecone_index_name="ml-conferences"
 )
 
 # papers = <result from your scraping logic>
