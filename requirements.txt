@@ -106,8 +106,10 @@ packaging==23.1
 pandas==2.1.1
 pandoc==2.3
 parsel==1.8.1
+pdfminer.six==20221105
+pdfplumber==0.10.4
 Pillow==9.5.0
-pinecone-client==2.2.1
+pinecone-client==3.0.3
 pluggy==1.0.0
 plumbum==1.8.2
 ply==3.11
@@ -130,6 +132,7 @@ pyOpenSSL==23.1.1
 pyparsing==3.0.9
 pypdf==3.16.4
 PyPDF2==3.0.1
+pypdfium2==4.27.0
 PyPika==0.48.9
 pytesseract==0.3.10
 pytest==7.3.1
