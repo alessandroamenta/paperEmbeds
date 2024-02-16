@@ -1,0 +1,20 @@
+# Virtual Environment
+venv/
+.venv/
+
+# python files
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# VS Code settings
+.vscode/
+
+# environment variables
+.env
+
+# Firebase credentials
+firebasecreds.json
