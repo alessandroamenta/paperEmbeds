@@ -75,36 +75,17 @@ class OpenReviewFetcher:
     def __init__(self):
         self.client = openreview.api.OpenReviewClient(baseurl='https://api2.openreview.net')
 
-    def fetch_accepted_submissions(self, venue_id):
+    def fetch_accepted_submissions(self, venue_id, num_papers=None):
         try:
             submissions = self.client.get_all_notes(content={'venueid': venue_id})
+            if num_papers is not None:
+                submissions = submissions[:num_papers]  # Limit the number of papers if num_papers is specified
             publications = []
             for note in submissions:
-                # Log the content of the note for debugging
-                logger.info(f"Inspecting note ID {note.id}: Content Fields: {list(note.content.keys())}")
-
-                # Attempt to fetch each field with logging
-                try:
-                    title = note.content['title']['value']
-                    logger.info(f"Title found: {title}")
-                except KeyError as e:
-                    logger.error(f"Title missing in note ID {note.id}: {e}")
-                    title = 'No Title'
-
-                try:
-                    abstract = note.content['abstract']['value']
-                    logger.info(f"Abstract found for note ID {note.id}")
-                except KeyError as e:
-                    logger.error(f"Abstract missing in note ID {note.id}: {e}")
-                    abstract = 'No Abstract'
-
-                try:
-                    authors = note.content['authors']['value']
-                    logger.info(f"Authors found for note ID {note.id}: {', '.join(authors)}")
-                except KeyError as e:
-                    logger.error(f"Authors missing in note ID {note.id}: {e}")
-                    authors = ['Unknown']
-
+                title = note.content.get('title', {}).get('value', 'No Title')
+                abstract = note.content.get('abstract', {}).get('value', 'No Abstract')
+                authors_list = note.content.get('authors', {}).get('value', ['Unknown'])
+                authors = ', '.join(authors_list)  # Convert list of authors to string
                 url = f"https://openreview.net/forum?id={note.id}"
                 
                 publication = {
@@ -114,8 +95,8 @@ class OpenReviewFetcher:
                     'authors': authors
                 }
                 publications.append(publication)
-                
+            logger.info(f"Fetched {len(publications)} publications from OpenReview for venue '{venue_id}'.")
             return publications
         except Exception as e:
-            logger.error(f"Error fetching accepted submissions: {e}")
+            logger.error(f"Error fetching accepted submissions for venue '{venue_id}': {e}")
             return []

@@ -11,12 +11,12 @@ class Scraper:
         raise NotImplementedError("Subclasses must implement this method!")
 
 class ICCVScraper(Scraper):
-    def __init__(self, fetcher, num_papers_to_scrape=None):
+    def __init__(self, fetcher, num_papers=None):
         self.fetcher = fetcher
-        self.num_papers_to_scrape = num_papers_to_scrape
-        logger.info("ICCVScraper instance created with fetcher %s and num_papers_to_scrape %s", fetcher, num_papers_to_scrape)
+        self.num_papers = num_papers
+        logger.info("ICCVScraper instance created with fetcher %s and num_papers_to_scrape %s", fetcher, num_papers)
 
-    def get_publications(self, url):
+    def get_publications(self, url, num_papers=None):
         logger.info("Fetching publications from URL: %s", url)
         try:
             response = requests.get(url)
@@ -32,9 +32,9 @@ class ICCVScraper(Scraper):
         logger.debug("Found %d arXiv anchors", len(arxiv_anchors))
 
         # If num_papers_to_scrape is defined, limit the number of papers
-        if self.num_papers_to_scrape:
-            arxiv_anchors = arxiv_anchors[:self.num_papers_to_scrape]
-            logger.info("Limiting the number of papers to scrape to %d", self.num_papers_to_scrape)
+        if self.num_papers:
+            arxiv_anchors = arxiv_anchors[:self.num_papers]
+            logger.info("Limiting the number of papers to scrape to %d", self.num_papers)
 
         for anchor in arxiv_anchors:
             title = anchor.find_previous('dt').text.strip()
@@ -48,21 +48,23 @@ class ICCVScraper(Scraper):
         return papers
     
 class ICLRScraper(Scraper):
-    def __init__(self, fetcher, num_papers_to_scrape=None):
+    def __init__(self, fetcher, num_papers=None):
         self.fetcher = fetcher
-        self.num_papers_to_scrape = num_papers_to_scrape
-        logger.info("ICLRScraper instance created with fetcher %s and num_papers_to_scrape %s", fetcher, num_papers_to_scrape)
+        self.num_papers = num_papers
+        logger.info("ICLRScraper instance created with fetcher %s and num_papers %s", fetcher, num_papers)
 
-    def get_publications(self, invitation):
+    def get_publications(self, invitation, num_papers=None):
         logger.info("Fetching publications for invitation: %s", invitation)
-        papers_data = self.fetcher.fetch(invitation)
+        papers_data = self.fetcher.fetch_accepted_submissions(invitation, num_papers=num_papers)
+        logger.info(f"Fetched data: {papers_data[:5]}")  # Log first 5 for brevity
         papers = []
 
-        for data in papers_data[:self.num_papers_to_scrape]:
-            title = data.get('content', {}).get('title', '')
-            authors = [author.get('name') for author in data.get('content', {}).get('authors', [])]
-            abstract = data.get('content', {}).get('abstract', '')
-            pdf_link = f"https://openreview.net/pdf?id={data.get('id')}"
+        for data in papers_data:
+            title = data.get('title', 'No title provided')  # Directly access 'title'
+            authors = data.get('authors', ['No authors listed'])  # Directly access 'authors', which is already a list
+            abstract = data.get('abstract', 'No abstract provided')  # Directly access 'abstract'
+            pdf_link = f"https://openreview.net/forum?id={data.get('id', 'No ID provided')}"  # Build link with 'id'
+
 
             papers.append({
                 'title': title,
@@ -70,6 +72,9 @@ class ICLRScraper(Scraper):
                 'abstract': abstract,
                 'url': pdf_link
             })
+            for paper in papers[:5]:
+                logger.debug(f"Processed paper: {paper}")
+        
 
         logger.info("Successfully fetched %d papers", len(papers))
         return papers

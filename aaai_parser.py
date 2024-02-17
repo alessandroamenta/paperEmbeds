@@ -61,11 +61,11 @@ class AAAIParser:
         return {'title': title, 'authors': authors}
 
 # Usage example
-pdf_path = './AAAI_Main-Track_2023-12-27.pdf'  # Update this path to the actual location of your PDF
+pdf_path = './AAAI_Main-Track_2023-12-27.pdf'
 parser = AAAIParser()
 publications = parser.get_publications(pdf_path)
 
 # Print the first few entries to verify the parsing
-for publication in publications[:10]:  # Limit to first 10 for quick checking
+for publication in publications[:10]: 
     print(publication)
 

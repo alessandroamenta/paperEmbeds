@@ -10,41 +10,50 @@ st.set_page_config(page_title="Accepted conference papers", layout="wide")
 def read_parsed_publications(filepath):
     try:
         with open(filepath, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+        # Ensure authors are consistently formatted as strings
+        for item in data:
+            if isinstance(item.get('authors'), list):
+                item['authors'] = ', '.join(item['authors'])
+        return data
     except FileNotFoundError:
         return []
 
-# Function to filter publications by search query
-def filter_publications(publications, query):
-    query = query.lower()
-    return [pub for pub in publications if query in pub['title'].lower() or any(query in author.lower() for author in pub['authors'])]
+# Function to filter publications
+def filter_publications(publications, query, year, conference):
+    filtered = []
+    for pub in publications:
+        if query.lower() in pub['title'].lower() or query.lower() in pub['authors'].lower():
+            if year == 'All' or pub['conference_year'] == year:
+                if conference == 'All' or pub['conference_name'] == conference:
+                    filtered.append(pub)
+    return filtered
 
-# Path to the JSON file containing the publications
-PUBLICATIONS_FILE = 'papers_repository.json'
+# Path to the JSON file
+PUBLICATIONS_FILE = 'papers_repo.json'
 
-# Load existing papers
+# Load the papers
 existing_papers = read_parsed_publications(PUBLICATIONS_FILE)
 
-# Display only the first 10 papers if no search query is made
-initial_display_papers = existing_papers[:10]
+# Sidebar for filters
+st.sidebar.header('Filters')
+selected_year = st.sidebar.selectbox('Year', ['All'] + sorted({paper['conference_year'] for paper in existing_papers}, reverse=True))
+selected_conference = st.sidebar.selectbox('Conference', ['All'] + sorted({paper['conference_name'] for paper in existing_papers}))
 
-# User input for search
-search_query = st.text_input("Search for papers (by title or author):")
+# Main search box
+search_query = st.text_input("Search for papers (by title or author):", "")
 
-if search_query:
-    # Filter publications based on the search query
-    filtered_papers = filter_publications(existing_papers, search_query)
-    if filtered_papers:
-        st.markdown("### Search Results")
-        st.write(pd.DataFrame(filtered_papers))
-    else:
-        st.markdown("No matching papers found.")
+# Apply filters
+filtered_papers = filter_publications(existing_papers, search_query, selected_year, selected_conference)
+
+# Display filtered results
+if filtered_papers:
+    df = pd.DataFrame(filtered_papers)
+    st.write(f"Displaying {len(filtered_papers)} papers", df[['title', 'authors', 'conference_name', 'conference_year']])
 else:
-    # If no search query, display the first 10 papers
-    st.markdown("### Existing Papers (showing first 10)")
-    st.write(pd.DataFrame(initial_display_papers))
+    st.write("No matching papers found.")
 
-# Additional notes or footer
+# Footer
 st.markdown("---")
-st.markdown("Developed by [Your Name or Organization]")
-st.markdown("© 2023 All Rights Reserved")
+st.markdown("Developed by Alessandro Amenta and Cesar Romero")
+st.markdown("© 2024 All Rights Reserved")
