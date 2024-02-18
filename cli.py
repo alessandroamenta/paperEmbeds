@@ -1,8 +1,11 @@
 import argparse
 import json
 import logging
+import os
 
 from scraper_factory import ScraperFactory
+from store import EmbeddingStorage
+
 
 logging.basicConfig(level=logging.INFO)
 JSON_FILE_NAME = 'papers_repo.json'
@@ -32,29 +35,44 @@ def scrape_and_save(num_papers, conference_type, year, venue_id=None, url=None):
         json.dump(existing_data, f, indent=4)
     logging.info(f"Saved scraped papers to {JSON_FILE_NAME}")
 
+def generate_and_store_embeddings():
+    # Load papers from JSON
+    with open(JSON_FILE_NAME, 'r') as file:
+        papers = json.load(file)
+    
+    # Initialize EmbeddingStorage
+    embedding_storage = EmbeddingStorage(
+        pinecone_api_key=os.getenv("PINECONE_API_KEY"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        pinecone_index_name="ml-conferences"
+    )
+    
+    # Directly pass papers to store_embeddings, no need to concatenate title and abstract here
+    embedding_storage.store_embeddings(papers)
+
+    logging.info("Embeddings generated and stored successfully.")
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CLI for scraping and embedding ML conference papers")
-    parser.add_argument("--num_papers", type=int, help="Number of papers to scrape. If not specified, all available papers will be scraped.")
-    parser.add_argument("--conference_type", type=str, choices=['ICLR', 'ICCV'], required=True, help="Type of conference to scrape")
-    parser.add_argument("--year", type=str, required=True, help="Year of the conference")
-    parser.add_argument("--venue_id", type=str, help="Venue ID to fetch papers from (required for ICLR)")
-    parser.add_argument("--url", type=str, help="URL to fetch papers from (required for ICCV)")
+    parser = argparse.ArgumentParser(description="CLI for managing ML conference papers")
+    subparsers = parser.add_subparsers(dest='action', help='Available actions')
+
+    # Subparser for scraping
+    parser_scrape = subparsers.add_parser('scrape', help='Scrape papers information')
+    parser_scrape.add_argument("--num_papers", type=int, help="Number of papers to scrape. If not specified, all available papers will be scraped.")
+    parser_scrape.add_argument("--conference_type", type=str, choices=['ICLR', 'ICCV'], required=True, help="Type of conference to scrape")
+    parser_scrape.add_argument("--year", type=str, required=True, help="Year of the conference")
+    parser_scrape.add_argument("--venue_id", type=str, help="Venue ID to fetch papers from (required for ICLR)")
+    parser_scrape.add_argument("--url", type=str, help="URL to fetch papers from (required for ICCV)")
+
+    # Subparser for embedding
+    parser_embed = subparsers.add_parser('embed', help='Generate and store embeddings')
+
     args = parser.parse_args()
 
-    # Validate input based on the type of conference
-    if args.conference_type == 'ICLR' and not args.venue_id:
-        parser.error("ICLR scraping requires a venue_id.")
-    if args.conference_type == 'ICCV' and not args.url:
-        parser.error("ICCV scraping requires a url.")
-    
-    scrape_and_save(args.num_papers, args.conference_type, args.year, venue_id=args.venue_id, url=args.url)
+    if args.action == 'scrape':
+        scrape_and_save(args.num_papers, args.conference_type, args.year, venue_id=args.venue_id, url=args.url)
+    elif args.action == 'embed':
+        generate_and_store_embeddings()
+    else:
+        parser.print_help()
 
-    # Step 2: Initialize EmbeddingStorage and generate/store embeddings
-    #embedding_storage = EmbeddingStorage(
-    #    pinecone_api_key=os.getenv("PINECONE_API_KEY"),
-    #    openai_api_key=os.getenv("OPENAI_API_KEY"),
-    #    pinecone_index_name="ml-conferences"
-    #)
-
-
-    #generate_and_store_embeddings(embedding_storage)

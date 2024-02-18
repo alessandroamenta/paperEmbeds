@@ -1,34 +1,39 @@
 import json
-import os
 import logging
 from store import EmbeddingStorage
 from dotenv import load_dotenv
+import os
 
+# Ensure the .env file is loaded to use environment variables
 load_dotenv()
 
-logger = logging.getLogger('test')
+# Setup logging
+logger = logging.getLogger('test_embeddings')
 logging.basicConfig(level=logging.INFO)
 
+# Specify the path to your papers JSON file
+JSON_FILE_PATH = 'papers_repo.json'  # Change this if your file has a different name or path
+
 # Load the papers from the JSON file
-with open('papers_repository.json', 'r') as file:
-    papers = json.load(file)[:10]  # Load only the first 10 papers
+with open(JSON_FILE_PATH, 'r') as file:
+    papers = json.load(file)[:5]  # Load only the first 5 papers for the test
 
-logger.info(f"Loaded {len(papers)} papers.")
+logger.info(f"Loaded {len(papers)} papers for embedding.")
 
-# Initialize EmbeddingStorage
+# Initialize EmbeddingStorage with your Pinecone and OpenAI API keys
 embedding_storage = EmbeddingStorage(
     pinecone_api_key=os.getenv("PINECONE_API_KEY"),
     openai_api_key=os.getenv("OPENAI_API_KEY"),
     pinecone_index_name="ml-conferences"
 )
 
-# Generate embeddings and store them in Pinecone
+# Generate embeddings for the titles and abstracts of the loaded papers and store them
 embedding_storage.store_embeddings(papers)
 
 logger.info("Embeddings stored successfully.")
 
 # Perform a query with a sample text
-sample_query = "Stochastic Segmentation"
+sample_query = "Towards Attack-tolerant Federated Learning via Critical Parameter Analysis"
 logger.info(f"Performing semantic search for '{sample_query}'...")
 results = embedding_storage.semantic_search(sample_query, top_k=3)
 logger.info(f"Query results for '{sample_query}':")

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
+from store import EmbeddingStorage
 
 # Set page config
 st.set_page_config(page_title="Accepted conference papers", layout="wide")

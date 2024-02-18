@@ -63,14 +63,14 @@ class ICLRScraper(Scraper):
             title = data.get('title', 'No title provided')  # Directly access 'title'
             authors = data.get('authors', ['No authors listed'])  # Directly access 'authors', which is already a list
             abstract = data.get('abstract', 'No abstract provided')  # Directly access 'abstract'
-            pdf_link = f"https://openreview.net/forum?id={data.get('id', 'No ID provided')}"  # Build link with 'id'
+            url = data.get('url', 'No URL provided')
 
 
             papers.append({
                 'title': title,
                 'authors': authors,
                 'abstract': abstract,
-                'url': pdf_link
+                'url': url
             })
             for paper in papers[:5]:
                 logger.debug(f"Processed paper: {paper}")
