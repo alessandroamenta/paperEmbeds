@@ -4,13 +4,14 @@ various sources. Basically strategy pattern.
 TODO: Add fetchers for google scholar, dblp, semantic scholar, etc.
 TODO: create a publication class that holds the content and metadata.
 '''
-from abc import ABCMeta, abstractmethod
 import logging
+import time
 import requests
+from abc import ABCMeta, abstractmethod
+
+import openreview
 from bs4 import BeautifulSoup
 import PyPDF2
-import time
-import openreview
 
 
 # Configure the logger for this module

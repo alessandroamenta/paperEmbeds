@@ -1,6 +1,6 @@
 import logging
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 
 # Configure logging for your module
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

@@ -1,9 +1,9 @@
 import logging
 import os
 import re
-from pinecone import Pinecone, ServerlessSpec
-from langchain.embeddings.openai import OpenAIEmbeddings
 from dotenv import load_dotenv
+from langchain.embeddings.openai import OpenAIEmbeddings
+from pinecone import Pinecone, ServerlessSpec
 
 # Load environment variables
 load_dotenv()
@@ -88,6 +88,28 @@ class EmbeddingStorage:
             for match in results['matches']:
                 logger.info("Match: %s with score: %f", match['id'], match['score'])
         return results
+    
+    def fetch_all_embeddings(self):
+        logger.info("Fetching up to 10,000 embeddings from Pinecone...")
+        all_embeddings = []
+        dummy_vector = [0] * 1536  # Adjust the dimensionality as needed
+
+        try:
+            # Fetch the first 10,000 embeddings
+            results = self.index.query(vector=dummy_vector, top_k=10000, include_values=True, include_metadata=True)
+            if results is None or 'matches' not in results:
+                logger.info("No embeddings found.")
+                return []
+            all_embeddings = [{'id': match['id'], 'values': match['values']} for match in results['matches']]
+            
+            logger.info(f"Fetched {len(all_embeddings)} embeddings.")
+            if all_embeddings:
+                logger.info(f"Sample embedding ID: {all_embeddings[0]['id']}, Values: {all_embeddings[0]['values'][:10]}")  # Log first 10 values of the first embedding
+            return all_embeddings
+        except Exception as e:
+            logger.error(f"An error occurred while fetching embeddings: {e}")
+            return []
+
 
 # Initialize EmbeddingStorage with your Pinecone and OpenAI API keys
 embedding_storage = EmbeddingStorage(

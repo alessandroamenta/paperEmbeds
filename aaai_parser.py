@@ -1,6 +1,6 @@
-import pdfplumber
 import logging
 import re
+import pdfplumber
 
 logging.basicConfig(level=logging.INFO)
 

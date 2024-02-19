@@ -1,9 +1,17 @@
-import streamlit as st
-import pandas as pd
 import os
-from dotenv import load_dotenv
 import json
+import pandas as pd
+import streamlit as st
+from dotenv import load_dotenv
+import streamlit.components.v1 as components
+
+from bokeh.plotting import figure
+from bokeh.models import HoverTool, ColumnDataSource
+from bokeh.resources import CDN
+from bokeh.embed import file_html
+
 from store import EmbeddingStorage
+
 
 load_dotenv()
 
@@ -72,6 +80,39 @@ if filtered_papers:
     st.write(f"Displaying {len(filtered_papers)} papers", df[['title', 'authors', 'url', 'conference_name', 'conference_year']])
 else:
     st.write("No matching papers found.")
+
+# Function to read t-SNE data
+@st.cache_data
+def read_tsne_data(filepath):
+    with open(filepath, 'r') as f:
+        return json.load(f)
+
+# Read t-SNE data
+tsne_data = read_tsne_data('tsne_results.json')
+
+# Create a ColumnDataSource from the t-SNE data
+source = ColumnDataSource({
+    'x': [item['x'] for item in tsne_data],
+    'y': [item['y'] for item in tsne_data],
+    'title': [item['id'] for item in tsne_data],
+})
+
+# Create a new plot with a title and axis labels
+p = figure(title='t-SNE of Papers', x_axis_label='t-SNE 1', y_axis_label='t-SNE 2', width=800, tools="pan,wheel_zoom,reset,save")
+
+# Add a hover tool that will display the ID
+hover = HoverTool(tooltips=[('', '@title')])
+p.add_tools(hover)
+
+# Add a circle renderer with size, color, and alpha
+point_size = 6  # Smaller point size
+p.circle('x', 'y', size=point_size, source=source, alpha=0.6, color='seagreen')
+
+# Convert plot to HTML
+html = file_html(p, CDN, "t-SNE Plot")
+
+# Streamlit function to display raw HTML
+components.html(html, height=800)
 
 # Footer
 st.markdown("---")
