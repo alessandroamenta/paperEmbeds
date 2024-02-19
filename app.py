@@ -76,4 +76,3 @@ else:
 # Footer
 st.markdown("---")
 st.markdown("Developed by Alessandro Amenta and Cesar Romero")
-st.markdown("© 2024 All Rights Reserved")
