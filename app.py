@@ -1,7 +1,17 @@
 import streamlit as st
 import pandas as pd
+import os
+from dotenv import load_dotenv
 import json
 from store import EmbeddingStorage
+
+load_dotenv()
+
+embedding_storage = EmbeddingStorage(
+        pinecone_api_key=os.getenv("PINECONE_API_KEY"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        pinecone_index_name="ml-conferences"
+    )
 
 # Set page config
 st.set_page_config(page_title="Accepted conference papers", layout="wide")
@@ -30,9 +40,18 @@ def filter_publications(publications, query, year, conference):
                     filtered.append(pub)
     return filtered
 
+def unified_search(publications, query, year, conference, top_k=5):
+    filtered = filter_publications(publications, "", year, conference)
+    if query:  # Perform semantic search only if there's a query
+        semantic_results = embedding_storage.semantic_search(query, top_k=top_k)
+        semantic_ids = [result['id'] for result in semantic_results['matches']]
+        # Filter the publications based on semantic search results and additional filters
+        filtered = [pub for pub in filtered if pub['title'] in semantic_ids]
+    return filtered
+
+
 # Path to the JSON file
 PUBLICATIONS_FILE = 'papers_repo.json'
-
 # Load the papers
 existing_papers = read_parsed_publications(PUBLICATIONS_FILE)
 
@@ -43,14 +62,14 @@ selected_conference = st.sidebar.selectbox('Conference', ['All'] + sorted({paper
 
 # Main search box
 search_query = st.text_input("Search for papers (by title or author):", "")
-
-# Apply filters
-filtered_papers = filter_publications(existing_papers, search_query, selected_year, selected_conference)
+# Apply unified search with filters and optional semantic search
+filtered_papers = unified_search(existing_papers, search_query, selected_year, selected_conference, top_k=10)
 
 # Display filtered results
 if filtered_papers:
+    # Display the filtered and/or semantically searched papers
     df = pd.DataFrame(filtered_papers)
-    st.write(f"Displaying {len(filtered_papers)} papers", df[['title', 'authors', 'conference_name', 'conference_year']])
+    st.write(f"Displaying {len(filtered_papers)} papers", df[['title', 'authors', 'url', 'conference_name', 'conference_year']])
 else:
     st.write("No matching papers found.")
 

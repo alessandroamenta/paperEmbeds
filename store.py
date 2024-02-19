@@ -23,7 +23,7 @@ class EmbeddingStorage:
         if pinecone_index_name not in pc.list_indexes().names():
             pc.create_index(
                 name=pinecone_index_name, 
-                dimension=768,  # Example dimension, adjust as needed
+                dimension=1536,  # Example dimension, adjust as needed
                 metric='cosine',  # Example metric, adjust as needed
                 spec=ServerlessSpec(
                     cloud='aws', 
@@ -76,7 +76,7 @@ class EmbeddingStorage:
             logger.info(f"Batch {i//batch_size+1}/{(total_papers+batch_size-1)//batch_size} stored successfully.")
 
 
-    def semantic_search(self, query_text, top_k=1):
+    def semantic_search(self, query_text, top_k=15):
         logger.info("Semantic search initiated for query: '%s'", query_text)
         query_embedding = self.generate_embeddings([query_text])[0]
         results = self.index.query(vector=query_embedding, top_k=top_k, include_values=True)

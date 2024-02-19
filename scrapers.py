@@ -10,11 +10,11 @@ class Scraper:
     def get_publications(self, url):
         raise NotImplementedError("Subclasses must implement this method!")
 
-class ICCVScraper(Scraper):
+class OpenAccessScraper(Scraper):
     def __init__(self, fetcher, num_papers=None):
         self.fetcher = fetcher
         self.num_papers = num_papers
-        logger.info("ICCVScraper instance created with fetcher %s and num_papers_to_scrape %s", fetcher, num_papers)
+        logger.info("OpenAccessScraper instance created with fetcher %s and num_papers_to_scrape %s", fetcher, num_papers)
 
     def get_publications(self, url, num_papers=None):
         logger.info("Fetching publications from URL: %s", url)
@@ -47,11 +47,11 @@ class ICCVScraper(Scraper):
         logger.info("Successfully fetched %d papers", len(papers))
         return papers
     
-class ICLRScraper(Scraper):
+class OpenReviewScraper(Scraper):
     def __init__(self, fetcher, num_papers=None):
         self.fetcher = fetcher
         self.num_papers = num_papers
-        logger.info("ICLRScraper instance created with fetcher %s and num_papers %s", fetcher, num_papers)
+        logger.info("OpenReviewScraper instance created with fetcher %s and num_papers %s", fetcher, num_papers)
 
     def get_publications(self, invitation, num_papers=None):
         logger.info("Fetching publications for invitation: %s", invitation)
