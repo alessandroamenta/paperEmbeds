@@ -18,6 +18,6 @@ We welcome contributions from the community. Here's how you can help:
 Please make sure to update tests as appropriate.
 
 ## Code of Conduct
-By participating, you are expected to uphold this code. Please report unacceptable behavior to alessandraamenta1@gmail.com.
+By participating, you are expected to uphold this code. Please report unacceptable behavior to alessandroamenta1@gmail.com.
 
 Thank you for your contributions!
