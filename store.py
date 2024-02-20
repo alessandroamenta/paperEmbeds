@@ -100,7 +100,14 @@ class EmbeddingStorage:
             if results is None or 'matches' not in results:
                 logger.info("No embeddings found.")
                 return []
-            all_embeddings = [{'id': match['id'], 'values': match['values']} for match in results['matches']]
+            all_embeddings = [
+                {
+                    'id': match['id'],
+                    'values': match['values'],
+                    'conference_name': match['metadata']['conference_name']  # Include conference year
+                }
+                for match in results['matches']
+            ]
             
             logger.info(f"Fetched {len(all_embeddings)} embeddings.")
             if all_embeddings:

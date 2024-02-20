@@ -90,23 +90,35 @@ def read_tsne_data(filepath):
 # Read t-SNE data
 tsne_data = read_tsne_data('tsne_results.json')
 
+# Define a color for each conference
+conference_colors = {
+    'ICLR': 'blue',
+    'ICCV': 'green',
+    'NeurIPS': 'red',
+    'CVPR': 'orange',
+    'EMNLP': 'purple',
+    'WACV': 'brown'
+}
+
 # Create a ColumnDataSource from the t-SNE data
 source = ColumnDataSource({
     'x': [item['x'] for item in tsne_data],
     'y': [item['y'] for item in tsne_data],
     'title': [item['id'] for item in tsne_data],
+    'conference_name': [item['conference_name'] for item in tsne_data],
+    'color': [conference_colors.get(item['conference_name'], 'grey') for item in tsne_data], 
 })
 
 # Create a new plot with a title and axis labels
 p = figure(title='t-SNE of Papers', x_axis_label='t-SNE 1', y_axis_label='t-SNE 2', width=800, tools="pan,wheel_zoom,reset,save")
 
 # Add a hover tool that will display the ID
-hover = HoverTool(tooltips=[('', '@title')])
+hover = HoverTool(tooltips=[('Title', '@title'), ('Conference', '@conference_name') ])
 p.add_tools(hover)
 
 # Add a circle renderer with size, color, and alpha
-point_size = 6  # Smaller point size
-p.circle('x', 'y', size=point_size, source=source, alpha=0.6, color='seagreen')
+point_size = 5  # Smaller point size
+p.circle('x', 'y', size=point_size, source=source, alpha=0.6, color='color')
 
 # Convert plot to HTML
 html = file_html(p, CDN, "t-SNE Plot")

@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 from dotenv import load_dotenv
-from sklearn.manifold import TSNE
+import umap
 from store import EmbeddingStorage
 
 load_dotenv()
@@ -25,23 +25,23 @@ print(f"Embeddings array shape: {embeddings_array.shape}")
 
 # Ensure there are valid embeddings before proceeding
 if embeddings_array.size > 0:
-    # Perform t-SNE
-    tsne = TSNE(n_components=2, perplexity=150, learning_rate=100, n_iter=5000)
-    tsne_results = tsne.fit_transform(embeddings_array)
+    # Perform UMAP
+    umap_model = umap.UMAP(n_neighbors=50, n_components=2, min_dist=0.1, metric='cosine', n_epochs=500, random_state=42)
+    umap_results = umap_model.fit_transform(embeddings_array)
 
-    # Combine t-SNE results with paper IDs
-    tsne_data = [
-    {
-        'id': embedding['id'],
-        'x': float(result[0]),
-        'y': float(result[1]),
-        'conference_name': embedding['conference_name'] 
-    } 
-    for embedding, result in zip(all_embeddings, tsne_results)
+    # Combine UMAP results with paper IDs
+    umap_data = [
+        {
+            'id': embedding['id'],
+            'x': float(result[0]),
+            'y': float(result[1]),
+            'conference_name': embedding['conference_name'] 
+        } 
+        for embedding, result in zip(all_embeddings, umap_results)
     ]
 
-    # Save the t-SNE results
-    with open('tsne_results.json', 'w') as f:
-        json.dump(tsne_data, f)
+    # Save the UMAP results
+    with open('umap_results.json', 'w') as f:
+        json.dump(umap_data, f)
 else:
-    print("No valid embeddings to process with t-SNE.")
+    print("No valid embeddings to process with UMAP.")
