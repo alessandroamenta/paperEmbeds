@@ -12,34 +12,38 @@ from bokeh.embed import file_html
 
 from store import EmbeddingStorage
 
-
+# Load environment variables
 load_dotenv()
 
+# Initialize embedding storage with API keys and index name
 embedding_storage = EmbeddingStorage(
         pinecone_api_key=os.getenv("PINECONE_API_KEY"),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
         pinecone_index_name="ml-conferences"
     )
 
-# Set page config
-st.set_page_config(page_title="Accepted conference papers", layout="wide")
+# Configure the page
+st.set_page_config(page_title="ML Conference Papers Explorer 🔭", layout="wide")
 
-# Read the JSON file containing the parsed publications
+# Cache and read publications from a JSON file
 @st.cache_data
 def read_parsed_publications(filepath):
+    """Read and parse publication data from a JSON file."""
     try:
         with open(filepath, 'r') as f:
             data = json.load(f)
-        # Ensure authors are consistently formatted as strings
+        # Format authors as a comma-separated string
         for item in data:
             if isinstance(item.get('authors'), list):
                 item['authors'] = ', '.join(item['authors'])
         return data
     except FileNotFoundError:
+        st.error("Publication file not found. Please check the file path.")
         return []
 
-# Function to filter publications
+# Filter publications based on user query and selections
 def filter_publications(publications, query, year, conference):
+    """Filter publications by title, authors, year, and conference."""
     filtered = []
     for pub in publications:
         if query.lower() in pub['title'].lower() or query.lower() in pub['authors'].lower():
@@ -48,49 +52,46 @@ def filter_publications(publications, query, year, conference):
                     filtered.append(pub)
     return filtered
 
+# Perform a unified search combining filters and semantic search
 def unified_search(publications, query, year, conference, top_k=5):
+    """Combine semantic and filter-based search to find relevant papers."""
     filtered = filter_publications(publications, "", year, conference)
-    if query:  # Perform semantic search only if there's a query
+    if query:  # Use semantic search if there's a query
         semantic_results = embedding_storage.semantic_search(query, top_k=top_k)
         semantic_ids = [result['id'] for result in semantic_results['matches']]
-        # Filter the publications based on semantic search results and additional filters
         filtered = [pub for pub in filtered if pub['title'] in semantic_ids]
     return filtered
 
-
-# Path to the JSON file
+# Define file paths and load publications
 PUBLICATIONS_FILE = 'papers_repo.json'
-# Load the papers
 existing_papers = read_parsed_publications(PUBLICATIONS_FILE)
 
-# Sidebar for filters
-st.sidebar.header('Filters')
+# Setup sidebar filters for user selection
+st.sidebar.header('Filters 🔍')
 selected_year = st.sidebar.selectbox('Year', ['All'] + sorted({paper['conference_year'] for paper in existing_papers}, reverse=True))
 selected_conference = st.sidebar.selectbox('Conference', ['All'] + sorted({paper['conference_name'] for paper in existing_papers}))
 
-# Main search box
-search_query = st.text_input("Search for papers (by title or author):", "")
-# Apply unified search with filters and optional semantic search
+# Main search interface
+search_query = st.text_input("Enter keywords, topics, or author names to find relevant papers:", "")
 filtered_papers = unified_search(existing_papers, search_query, selected_year, selected_conference, top_k=10)
 
-# Display filtered results
+# Display search results
 if filtered_papers:
-    # Display the filtered and/or semantically searched papers
     df = pd.DataFrame(filtered_papers)
-    st.write(f"Displaying {len(filtered_papers)} papers", df[['title', 'authors', 'url', 'conference_name', 'conference_year']])
+    st.write(f"Found {len(filtered_papers)} matching papers 🔎", df[['title', 'authors', 'url', 'conference_name', 'conference_year']])
 else:
-    st.write("No matching papers found.")
+    st.write("No matching papers found. Try adjusting your search criteria.")
 
-# Function to read t-SNE data
+# t-SNE plot visualization
 @st.cache_data
 def read_tsne_data(filepath):
+    """Read t-SNE data from a file."""
     with open(filepath, 'r') as f:
         return json.load(f)
 
-# Read t-SNE data
 tsne_data = read_tsne_data('tsne_results.json')
 
-# Define a color for each conference
+# Assign colors to conferences for visualization
 conference_colors = {
     'ICLR': 'blue',
     'ICCV': 'green',
@@ -100,7 +101,7 @@ conference_colors = {
     'WACV': 'brown'
 }
 
-# Create a ColumnDataSource from the t-SNE data
+# Prepare data for plotting
 source = ColumnDataSource({
     'x': [item['x'] for item in tsne_data],
     'y': [item['y'] for item in tsne_data],
@@ -109,23 +110,16 @@ source = ColumnDataSource({
     'color': [conference_colors.get(item['conference_name'], 'grey') for item in tsne_data], 
 })
 
-# Create a new plot with a title and axis labels
-p = figure(title='t-SNE of Papers', x_axis_label='t-SNE 1', y_axis_label='t-SNE 2', width=800, tools="pan,wheel_zoom,reset,save")
-
-# Add a hover tool that will display the ID
-hover = HoverTool(tooltips=[('Title', '@title'), ('Conference', '@conference_name') ])
+# Setup the plot
+p = figure(title='ML Conference Papers Visualization', x_axis_label='Dimension 1', y_axis_label='Dimension 2', width=800, tools="pan,wheel_zoom,reset,save")
+hover = HoverTool(tooltips=[('Title', '@title'), ('Conference', '@conference_name')])
 p.add_tools(hover)
+p.circle('x', 'y', size=5, source=source, alpha=0.6, color='color')
 
-# Add a circle renderer with size, color, and alpha
-point_size = 5  # Smaller point size
-p.circle('x', 'y', size=point_size, source=source, alpha=0.6, color='color')
-
-# Convert plot to HTML
+# Render the t-SNE plot
 html = file_html(p, CDN, "t-SNE Plot")
-
-# Streamlit function to display raw HTML
 components.html(html, height=800)
 
-# Footer
+# Add a footer
 st.markdown("---")
-st.markdown("Developed by Alessandro Amenta and Cesar Romero")
+st.markdown("🚀 Made by Alessandro Amenta and Cesar Romero, with Python and lots of ❤️ for the ML community.")
