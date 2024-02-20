@@ -1,24 +1,24 @@
-import pdfplumber
 import logging
 import re
+import pdfplumber
 
-logging.basicConfig(level=logging.DEBUG, filename='parser.log', filemode='w',
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO)
 
 class AAAIParser:
     def __init__(self):
-        pass
+        self.expecting_title = True  # Start with expecting a title
 
     def get_publications(self, pdf_path):
         publications = []
         with pdfplumber.open(pdf_path) as pdf:
-            for page_number, page in enumerate(pdf.pages):
-                logging.info(f'Processing page {page_number + 1}')
-                text = page.extract_text()
-                if text:
-                    page_publications = self.extract_publications_from_page(text)
-                    publications.extend(page_publications)
-        logging.info('Completed parsing PDF')
+            # Process only the first page for demonstration purposes
+            first_page = pdf.pages[0]
+            logging.info('Processing page 1')
+            text = first_page.extract_text()
+            if text:
+                page_publications = self.extract_publications_from_page(text)
+                publications.extend(page_publications)
+        logging.info('Completed parsing the first page of PDF')
         return publications
 
     def extract_publications_from_page(self, text):
@@ -27,37 +27,45 @@ class AAAIParser:
 
     def parse_entries(self, text):
         entries = []
-        entry_lines = []
+        title = ""
+        authors = []
         lines = text.split('\n')
-        for line in lines[2:]:  # Skip the header lines
-            if re.match(r'^\d+\s', line):  # New entry starts
-                if entry_lines:  # Previous entry exists
-                    entries.append(self.process_entry_lines(entry_lines))
-                    entry_lines = []  # Reset for the next entry
-            entry_lines.append(line)
-        if entry_lines:  # Add the last entry if there is one
-            entries.append(self.process_entry_lines(entry_lines))
+        for line in lines:
+            if self.expecting_title:
+                if not line.strip().startswith('AAAI') and not line.strip().startswith('Title'):
+                    title = line.strip()
+                    self.expecting_title = False  # Next line(s) should be authors
+            else:
+                # Check if the line starts with a letter (author line) or a digit (next title)
+                if re.match(r'^[A-Za-z]', line):
+                    authors.append(line.strip())
+                else:
+                    # Process the current entry
+                    if title and authors:
+                        entries.append(self.process_entry(title, authors))
+                    # Reset for next entry
+                    title = ""
+                    authors = []
+                    self.expecting_title = True
+        # Process the last entry if there is one
+        if title and authors:
+            entries.append(self.process_entry(title, authors))
+
         return entries
 
-    def process_entry_lines(self, entry_lines):
-        entry_text = ' '.join(entry_lines)  # Combine lines to handle multi-line entries
-        id_match = re.match(r'^(\d+)', entry_text)
-        if not id_match:
-            logging.warning('No ID found in entry: ' + ' '.join(entry_lines))
-            return None
-        id_ = id_match.group(1)
-        title_authors = entry_text[len(id_):].strip()  # Remove ID from the start
-        first_semicolon_idx = title_authors.find(';')
-        title = title_authors[:first_semicolon_idx].strip()
-        authors = title_authors[first_semicolon_idx+1:].strip().split(';')
-        authors = [author.strip() for author in authors if author.strip()]  # Clean up author names
-        return {'id': id_, 'title': title, 'authors': authors}
+    def process_entry(self, title, authors_lines):
+        authors_text = ' '.join(authors_lines)
+        # Replace multiple spaces with a single space and split authors by semicolon
+        authors = re.split(r';\s*', authors_text.strip())
+        authors = [author.strip() for author in authors if author.strip()]
+        return {'title': title, 'authors': authors}
 
 # Usage example
-pdf_path = 'AAAI_Main-Track_2024-01-04.pdf'  # Update this path to the actual location of your PDF
+pdf_path = './AAAI_Main-Track_2023-12-27.pdf'
 parser = AAAIParser()
 publications = parser.get_publications(pdf_path)
 
 # Print the first few entries to verify the parsing
-for publication in publications[:10]:
+for publication in publications[:10]: 
     print(publication)
+

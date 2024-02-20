@@ -1,37 +1,55 @@
-# ML Conference Paper Explorer 📄🔍
+# ML Conference Paper Explorer 📄🔭
 
-Welcome to the ML Conference Paper Explorer! This project is all about
-making it easy to access and explore papers from major machine
-learning conferences. We scrape the abstracts, turn them into
-embeddings, and display them in a user-friendly interface where you
-can search and explore to your heart's content.
+Efficiently find and explore papers from all the major ML conferences. Our tool aggregates accepted papers, enriches them with semantic embeddings for precise searching, and provides sleek visualizations for a straightforward experience. Forget the clunky official sites; our aim is to streamline your search for ML papers that are relevant to you.
 
 ## Features 🌟
-- Scrape abstracts from major ML conference websites.
-- Convert abstracts into embeddings for advanced analysis.
-- Friendly and interactive UI for exploring and searching papers.
+
+- Semantic search for easy discovery of ML papers.
+- Interactive t-SNE plots for visual exploration of paper clusters.
+- Abstracts and titles converted to embeddings for nuanced search capabilities.
+- A growing repository of papers from major ML conferences, stored for quick keyword searching.
 
 ## How to Use 🛠
+
 1. Clone the repository to your local machine.
-2. Set up a virtual environment and install the required dependencies.
-3. Run the Streamlit app and enter the URL of the desired ML conference.
-4. Explore the papers' abstracts through our easy-to-navigate interface.
+2. Set up a virtual environment and install dependencies from `requirements.txt`.
+3. Run the Streamlit app with `streamlit run app.py`.
+4. Search and explore papers using intuitive filters and semantic search.
+
+## Conferences 📅
+
+Progress on ML conference integrations:
+
+| Conference | Year | Status          |
+|------------|------|-----------------|
+| ICCV       | 2023 | ✅              |
+| NeurIPS    | 2023 | ✅              |
+| CVPR       | 2023 | ✅              |
+| EMNLP      | 2023 | ✅              |
+| WACV       | 2024 | ✅              |
+| ICLR       | 2024 | ✅              |
+| AAAI       | 2024 | 🚧 In Progress  |
+| NeurIPS    | 2024 | 📅 Planned      |
+| IEEE       | 2024 | 📅 Planned      |
+| AICS       | 2024 | 📅 Planned      |
+| ECCV       | 2024 | 📅 Planned      |
 
 ## To-Do 📝
-- [ ] Implement embedding generation for the scraped abstracts.
-- [ ] Integrate embeddings into the frontend for enhanced search capabilities.
-- [ ] Expand the scraping capabilities to more ML conference websites.
-- [ ] Add more interactive elements to the UI for a richer user experience.
-- [ ] Optimize performance for handling large datasets.
-- [ ] implement a data layer for storing and retrieving the scraped data.
-- [ ] separate scraping from web app.
+
+- [ ] Retrieve full vector data from Pinecone (current limit is 10k; we have 10,683 vectors).
+- [ ] Enhance the unified search for a more intuitive experience, akin to Gmail's search capabilities.
+- [ ] Complete the AAAI parser and fetcher for paper data.
+- [ ] Containerize the application for easier deployment.
+- [ ] Utilize Docker Compose or K3s for local spin-up of the app and database.
+- [ ] Self-host an open-source vector database.
+- [ ] Refine the interactive plot aesthetics and include category-based color coding.
 
 ## Contributing 🤝
-Feel free to fork this repository and submit pull requests. Any
-contributions to improve the project or add new features are more than
-welcome!
+
+Keen to chip in? Fork the project, make your changes, and submit a pull request! We're all about collaboration here. Check out the `CONTRIBUTING.md` for more details on how to get started.
 
 ## License 📜
-This project is open-source and available under the [MIT License](LICENSE).
+
+The ML Conference Paper Explorer is open-source under the [MIT License](LICENSE).
 
 Happy coding! 😊

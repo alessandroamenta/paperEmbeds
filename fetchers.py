@@ -4,12 +4,15 @@ various sources. Basically strategy pattern.
 TODO: Add fetchers for google scholar, dblp, semantic scholar, etc.
 TODO: create a publication class that holds the content and metadata.
 '''
-from abc import ABCMeta, abstractmethod
 import logging
+import time
 import requests
+from abc import ABCMeta, abstractmethod
+
+import openreview
 from bs4 import BeautifulSoup
 import PyPDF2
-import time
+
 
 # Configure the logger for this module
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -67,3 +70,34 @@ class ArxivFetcher(PublicationFetcher):
         #    content = ""
         #    for page_num in range(len(reader.pages)):
         #        content += reader.pages[page_num].extract_text()
+    
+
+class OpenReviewFetcher:
+    def __init__(self):
+        self.client = openreview.api.OpenReviewClient(baseurl='https://api2.openreview.net')
+
+    def fetch_accepted_submissions(self, venue_id, num_papers=None):
+        try:
+            submissions = self.client.get_all_notes(content={'venueid': venue_id})
+            if num_papers is not None:
+                submissions = submissions[:num_papers]  # Limit the number of papers if num_papers is specified
+            publications = []
+            for note in submissions:
+                title = note.content.get('title', {}).get('value', 'No Title')
+                abstract = note.content.get('abstract', {}).get('value', 'No Abstract')
+                authors_list = note.content.get('authors', {}).get('value', ['Unknown'])
+                authors = ', '.join(authors_list)  # Convert list of authors to string
+                url = f"https://openreview.net/forum?id={note.id}"
+                
+                publication = {
+                    'title': title,
+                    'url': url,
+                    'abstract': abstract,
+                    'authors': authors
+                }
+                publications.append(publication)
+            logger.info(f"Fetched {len(publications)} publications from OpenReview for venue '{venue_id}'.")
+            return publications
+        except Exception as e:
+            logger.error(f"Error fetching accepted submissions for venue '{venue_id}': {e}")
+            return []
