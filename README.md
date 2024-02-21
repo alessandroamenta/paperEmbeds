@@ -16,6 +16,32 @@ Efficiently find and explore papers from all the major ML conferences. Our tool 
 3. Run the Streamlit app with `streamlit run app.py`.
 4. Search and explore papers using intuitive filters and semantic search.
 
+## Extending the Tool with New Conferences 🌐
+
+Want to add a new ML conference to our collection? Once you've developed the scraper and fetcher for the conference, you'll need to use and run `cli.py` to scrape and store the papers. Here's how you can do it:
+
+### Scrape and Store Papers
+
+To scrape and store papers for a new conference, use the following command, substituting the `conference_type`, `year`, `url`, and `num_papers` with the appropriate values for the conference you are adding, like in the example below:
+
+```bash
+python cli.py scrape --conference_type ICCV --year 2023 --url "https://openaccess.thecvf.com/ICCV2023?day=all"  --num_papers 5
+```
+
+### Embed Papers
+After scraping, run the following command to create embeddings for the papers, which enhances the search capability:
+
+```bash
+python cli.py embed
+```
+If you need to start embedding from a specific index due to a large number of papers, use the --start_index option:
+
+```bash
+python cli.py embed --start_index 3600
+```
+
+Please ensure that your contributions follow the same coding standards and structure as the existing scrapers and fetchers. Happy coding!
+
 ## Conferences 📅
 
 Progress on ML conference integrations:
